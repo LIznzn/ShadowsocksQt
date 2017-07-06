@@ -12,15 +12,20 @@ This is a standalone program in both local-side and server-side.
 
 [ss]: http://shadowsocks.org
 
+
 Feature
 -------
 
 Based on `libQtShadowsocks` 1.10.0.
 
 1.Remove OTA
+
 2.Remove RC4-MD5 & RC4
+
 3.Remove encryption speedtest
+
 4.Update command options
+
 
 License
 -------
