@@ -1,30 +1,10 @@
-/*
- * common.cpp - the source file of Common class
- *
- * Copyright (C) 2014-2015 Symeon Huang <hzwhuang@gmail.com>
- *
- * This file is part of the libQtShadowsocks.
- *
- * libQtShadowsocks is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * libQtShadowsocks is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with libQtShadowsocks; see the file LICENSE. If not, see
- * <http://www.gnu.org/licenses/>.
- */
-
 #include <QTextStream>
 #include <QHostInfo>
 #include <QtEndian>
 #include <random>
 #include "common.h"
+
+#define QSS_VERSION "0.0.1"
 
 using namespace QSS;
 
@@ -32,7 +12,6 @@ QTextStream Common::qOut(stdout, QIODevice::WriteOnly | QIODevice::Unbuffered);
 QVector<QHostAddress> Common::bannedAddressVector;
 QMutex Common::bannedAddressMutex;
 const quint8 Common::ADDRESS_MASK = 0b00001111;//0xf
-const quint8 Common::ONETIMEAUTH_FLAG = 0b00010000;//0x10
 
 const QByteArray Common::version()
 {
@@ -40,7 +19,7 @@ const QByteArray Common::version()
 }
 
 //pack a shadowsocks header
-QByteArray Common::packAddress(const Address &addr, bool auth)
+QByteArray Common::packAddress(const Address &addr)
 {
     QByteArray addr_bin, port_ns;
     port_ns.resize(2);
@@ -62,16 +41,12 @@ QByteArray Common::packAddress(const Address &addr, bool auth)
     }
 
     char type_c = static_cast<char>(type);
-    if (auth) {
-        type_c |= ONETIMEAUTH_FLAG;
-    }
 
     return type_c + addr_bin + port_ns;
 }
 
 QByteArray Common::packAddress(const QHostAddress &addr,
-                               const quint16 &port,
-                               bool auth)
+                               const quint16 &port)
 {
     QByteArray addr_bin, port_ns;
     char type_c;
@@ -86,19 +61,14 @@ QByteArray Common::packAddress(const QHostAddress &addr,
         Q_IPV6ADDR ipv6_addr = addr.toIPv6Address();
         addr_bin = QByteArray(reinterpret_cast<char*>(ipv6_addr.c), 16);
     }
-    if (auth) {
-        type_c |= ONETIMEAUTH_FLAG;
-    }
     return type_c + addr_bin + port_ns;
 }
 
 void Common::parseHeader(const QByteArray &data,
                          Address &dest,
-                         int &header_length,
-                         bool &authFlag)
+                         int &header_length)
 {
     char atyp = data[0];
-    authFlag |= (atyp & ONETIMEAUTH_FLAG);
     int addrtype = static_cast<int>(atyp & ADDRESS_MASK);
     header_length = 0;
 
@@ -140,14 +110,6 @@ void Common::parseHeader(const QByteArray &data,
             }
         }
     }
-}
-
-int Common::randomNumber(int max, int min)
-{
-    std::random_device rd;
-    std::default_random_engine engine(rd());
-    std::uniform_int_distribution<int> dis(min, max - 1);
-    return dis(engine);
 }
 
 void Common::exclusive_or(unsigned char *ks,

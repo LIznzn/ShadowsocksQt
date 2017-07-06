@@ -1,25 +1,3 @@
-/*
- * chacha.cpp - the source file of ChaCha class
- *
- * Copyright (C) 2014-2015 Symeon Huang <hzwhuang@gmail.com>
- *
- * This file is part of the libQtShadowsocks.
- *
- * libQtShadowsocks is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * libQtShadowsocks is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with libQtShadowsocks; see the file LICENSE. If not, see
- * <http://www.gnu.org/licenses/>.
- */
-
 #include "chacha.h"
 #include "common.h"
 #include <botan/loadstor.h>
@@ -40,13 +18,11 @@ static inline void chacha_quarter_round(quint32 &a,
     a += b; d ^= a; d = rotate_left(d, 8);
     c += d; b ^= c; b = rotate_left(b, 7);
 }
-
 }
 
 ChaCha::ChaCha(const QByteArray &_key, const QByteArray &_iv, QObject *parent) :
     QObject (parent),
-    m_position(0)
-{
+    m_position(0) {
     const unsigned char *key =
             reinterpret_cast<const unsigned char*>(_key.constData());
 
@@ -70,8 +46,7 @@ ChaCha::ChaCha(const QByteArray &_key, const QByteArray &_iv, QObject *parent) :
     setIV(_iv);
 }
 
-void ChaCha::setIV(const QByteArray &_iv)
-{
+void ChaCha::setIV(const QByteArray &_iv) {
     const unsigned char *iv =
             reinterpret_cast<const unsigned char*>(_iv.constData());
 
@@ -92,8 +67,7 @@ void ChaCha::setIV(const QByteArray &_iv)
     chacha();
 }
 
-void ChaCha::chacha()
-{
+void ChaCha::chacha() {
     unsigned char *output = m_buffer.data();
     const quint32 *input = m_state.constData();
     quint32 x00 = input[ 0], x01 = input[ 1], x02 = input[ 2], x03 = input[ 3],
@@ -134,8 +108,7 @@ void ChaCha::chacha()
      m_position = 0;
 }
 
-QByteArray ChaCha::update(const QByteArray &input)
-{
+QByteArray ChaCha::update(const QByteArray &input) {
     quint32 length = input.length();
     QByteArray output;
     output.resize(length);

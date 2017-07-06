@@ -1,25 +1,3 @@
-/*
- * tcprelay.h - the header file of TcpRelay class
- *
- * Copyright (C) 2014-2016 Symeon Huang <hzwhuang@gmail.com>
- *
- * This file is part of the libQtShadowsocks.
- *
- * libQtShadowsocks is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * libQtShadowsocks is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with libQtShadowsocks; see the file LICENSE. If not, see
- * <http://www.gnu.org/licenses/>.
- */
-
 #ifndef TCPRELAY_H
 #define TCPRELAY_H
 
@@ -32,8 +10,7 @@
 
 namespace QSS {
 
-class QSS_EXPORT TcpRelay : public QObject
-{
+class QSS_EXPORT TcpRelay : public QObject {
     Q_OBJECT
 public:
     explicit TcpRelay(QTcpSocket *localSocket,
@@ -42,7 +19,6 @@ public:
                       const EncryptorPrivate &ep,
                       const bool &is_local,
                       const bool &autoBan,
-                      const bool &auth,
                       QObject *parent = 0);
 
     enum STAGE { INIT, ADDR, UDP_ASSOC, DNS, CONNECTING, STREAM, DESTROYED };
@@ -72,8 +48,6 @@ private:
     QByteArray dataToWrite;
     const bool &isLocal;
     const bool &autoBan;
-    bool auth;
-
     QTcpSocket *local;
     QTcpSocket *remote;
     QTimer *timer;
@@ -95,4 +69,4 @@ private slots:
 };
 
 }
-#endif // TCPRELAY_H
+#endif

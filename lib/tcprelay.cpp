@@ -1,25 +1,3 @@
-/*
- * tcprelay.cpp - the source file of TcpRelay class
- *
- * Copyright (C) 2014-2015 Symeon Huang <hzwhuang@gmail.com>
- *
- * This file is part of the libQtShadowsocks.
- *
- * libQtShadowsocks is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * libQtShadowsocks is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with libQtShadowsocks; see the file LICENSE. If not, see
- * <http://www.gnu.org/licenses/>.
- */
-
 #include "tcprelay.h"
 #include "common.h"
 
@@ -31,16 +9,13 @@ TcpRelay::TcpRelay(QTcpSocket *localSocket,
                    const EncryptorPrivate &ep,
                    const bool &is_local,
                    const bool &autoBan,
-                   const bool &auth,
                    QObject *parent) :
     QObject(parent),
     stage(INIT),
     serverAddress(server_addr),
     isLocal(is_local),
     autoBan(autoBan),
-    auth(auth),
-    local(localSocket)
-{
+    local(localSocket) {
     encryptor = new Encryptor(ep, this);
 
     connect(&remoteAddress, &Address::lookedUp,
@@ -81,9 +56,6 @@ TcpRelay::TcpRelay(QTcpSocket *localSocket,
     // limit how many bytes we take from local socket at a time. This is due
     // the overhead introduced by OTA.
     quint64 localRecvSize = RemoteRecvSize;
-    if (auth && isLocal) {
-        localRecvSize -= (Cipher::AUTH_LEN + 2);
-    }
     local->setReadBufferSize(localRecvSize);
     local->setSocketOption(QAbstractSocket::LowDelayOption, 1);
     local->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
@@ -93,8 +65,7 @@ TcpRelay::TcpRelay(QTcpSocket *localSocket,
     remote->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
 }
 
-void TcpRelay::close()
-{
+void TcpRelay::close() {
     if (stage == DESTROYED) {
         return;
     }
@@ -105,8 +76,7 @@ void TcpRelay::close()
     emit finished();
 }
 
-void TcpRelay::handleStageAddr(QByteArray &data)
-{
+void TcpRelay::handleStageAddr(QByteArray &data) {
     if (isLocal) {
         int cmd = static_cast<int>(data.at(1));
         if (cmd == 3) {//CMD_UDP_ASSOCIATE
@@ -128,7 +98,7 @@ void TcpRelay::handleStageAddr(QByteArray &data)
     }
 
     int header_length = 0;
-    Common::parseHeader(data, remoteAddress, header_length, auth);
+    Common::parseHeader(data, remoteAddress, header_length);
     if (header_length == 0) {
         emit info("Can't parse header. Wrong encryption method or password?");
         if (!isLocal && autoBan) {
@@ -150,55 +120,18 @@ void TcpRelay::handleStageAddr(QByteArray &data)
         static const QByteArray response(res, 10);
         local->write(response);
 
-        if (auth) {
-            char atyp = data[0];
-            data[0] = (atyp | Common::ONETIMEAUTH_FLAG);
-            if (data.length() > header_length) {
-                QByteArray header = data.left(header_length);
-                QByteArray chunk = data.mid(header_length);
-                encryptor->addHeaderAuth(header);
-                encryptor->addChunkAuth(chunk);
-                data = header + chunk;
-            } else {
-                encryptor->addHeaderAuth(data);
-            }
-        }
         dataToWrite.append(encryptor->encrypt(data));
         serverAddress.lookUp();
     } else {
-        if (auth) {
-            if (!encryptor->verifyHeaderAuth(data, header_length)) {
-                emit info("One-time message authentication for header failed.");
-                if (autoBan) {
-                    Common::banAddress(local->peerAddress());
-                }
-                close();
-                return;
-            } else {
-                header_length += Cipher::AUTH_LEN;
-            }
-        }
-
         if (data.length() > header_length) {
             data.remove(0, header_length);
-            if (auth) {
-                if (!encryptor->verifyExtractChunkAuth(data)) {
-                    emit info("Data chunk hash authentication failed.");
-                    if (autoBan) {
-                        Common::banAddress(local->peerAddress());
-                    }
-                    close();
-                    return;
-                }
-            }
             dataToWrite.append(data);
         }
         remoteAddress.lookUp();
     }
 }
 
-void TcpRelay::onLocalTcpSocketError()
-{
+void TcpRelay::onLocalTcpSocketError() {
     //it's not an "error" if remote host closed a connection
     if (local->error() != QAbstractSocket::RemoteHostClosedError) {
         emit info("Local socket error: " + local->errorString());
@@ -208,8 +141,7 @@ void TcpRelay::onLocalTcpSocketError()
     close();
 }
 
-void TcpRelay::onDNSResolved(const bool success, const QString errStr)
-{
+void TcpRelay::onDNSResolved(const bool success, const QString errStr) {
     if (success) {
         stage = CONNECTING;
         Address *addr = qobject_cast<Address*>(sender());
@@ -221,13 +153,11 @@ void TcpRelay::onDNSResolved(const bool success, const QString errStr)
     }
 }
 
-bool TcpRelay::writeToRemote(const QByteArray &data)
-{
+bool TcpRelay::writeToRemote(const QByteArray &data) {
     return remote->write(data) != -1;
 }
 
-void TcpRelay::onRemoteConnected()
-{
+void TcpRelay::onRemoteConnected() {
     emit latencyAvailable(startTime.msecsTo(QTime::currentTime()));
     stage = STREAM;
     if (!dataToWrite.isEmpty()) {
@@ -236,8 +166,7 @@ void TcpRelay::onRemoteConnected()
     dataToWrite.clear();
 }
 
-void TcpRelay::onRemoteTcpSocketError()
-{
+void TcpRelay::onRemoteTcpSocketError() {
     //it's not an "error" if remote host closed a connection
     if (remote->error() != QAbstractSocket::RemoteHostClosedError) {
         emit info("Remote socket error: " + remote->errorString());
@@ -247,8 +176,7 @@ void TcpRelay::onRemoteTcpSocketError()
     close();
 }
 
-void TcpRelay::onLocalTcpSocketReadyRead()
-{
+void TcpRelay::onLocalTcpSocketReadyRead() {
     QByteArray data = local->readAll();
 
     if (data.isEmpty()) {
@@ -267,21 +195,7 @@ void TcpRelay::onLocalTcpSocketReadyRead()
 
     if (stage == STREAM) {
         if (isLocal) {
-            if (auth) {
-                encryptor->addChunkAuth(data);
-            }
             data = encryptor->encrypt(data);
-        } else if (auth) {
-            if (!encryptor->verifyExtractChunkAuth(data)) {
-                emit info("Data chunk hash authentication failed.");
-                if (autoBan) {
-                    Common::banAddress(local->peerAddress());
-                }
-                close();
-                return;
-            } else if (data.isEmpty()) {
-                return;
-            }
         }
         writeToRemote(data);
     } else if (isLocal && stage == INIT) {
@@ -300,19 +214,7 @@ void TcpRelay::onLocalTcpSocketReadyRead()
     } else if (stage == CONNECTING || stage == DNS) {
         //take DNS into account, otherwise some data will get lost
         if (isLocal) {
-            if (auth) {
-                encryptor->addChunkAuth(data);
-            }
             data = encryptor->encrypt(data);
-        } else if (auth) {
-            if (!encryptor->verifyExtractChunkAuth(data)) {
-                emit info("Data chunk hash authentication failed.");
-                if (autoBan) {
-                    Common::banAddress(local->peerAddress());
-                }
-                close();
-                return;
-            }
         }
         dataToWrite.append(data);
     } else if ((isLocal && stage == ADDR) || (!isLocal && stage == INIT)) {
@@ -320,8 +222,7 @@ void TcpRelay::onLocalTcpSocketReadyRead()
     }
 }
 
-void TcpRelay::onRemoteTcpSocketReadyRead()
-{
+void TcpRelay::onRemoteTcpSocketReadyRead() {
     QByteArray buf = remote->readAll();
     if (buf.isEmpty()) {
         emit info("Remote received empty data.");
@@ -333,8 +234,7 @@ void TcpRelay::onRemoteTcpSocketReadyRead()
     local->write(buf);
 }
 
-void TcpRelay::onTimeout()
-{
+void TcpRelay::onTimeout() {
     emit info("TCP connection timeout.");
     close();
 }

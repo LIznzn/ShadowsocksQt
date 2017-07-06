@@ -1,27 +1,3 @@
-/*
- * addresstester.h - the header file of AddressTester class
- *
- * perform non-blocking address tests
- *
- * Copyright (C) 2015-2016 Symeon Huang <hzwhuang@gmail.com>
- *
- * This file is part of the libQtShadowsocks.
- *
- * libQtShadowsocks is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * libQtShadowsocks is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with libQtShadowsocks; see the file LICENSE. If not, see
- * <http://www.gnu.org/licenses/>.
- */
-
 #ifndef ADDRESSTESTER_H
 #define ADDRESSTESTER_H
 
@@ -59,7 +35,6 @@ public:
      */
     void startConnectivityTest(const QString& method,
                                const QString& password,
-                               bool one_time_auth,
                                int timeout = 3000);
 
 signals:
@@ -72,7 +47,7 @@ public slots:
      * The lag test only tests if the server port is open and listeninig
      * bind lagTestFinished() signal to get the test result
      */
-    void startLagTest(int timeout = 3000);//3000 msec by default
+    void startLagTest(int timeout = 3000);
 
 private:
     QHostAddress address;
@@ -84,7 +59,6 @@ private:
 
     QString encryptionMethod;
     QString encryptionPassword;
-    bool oneTimeAuth;
 
     void connectToServer(int timeout);
 
@@ -96,4 +70,4 @@ private slots:
 };
 
 }
-#endif // ADDRESSTESTER_H
+#endif

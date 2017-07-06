@@ -1,31 +1,3 @@
-/*
- * cipher.h - the header file of Cipher class
- *
- * Communicate with lower-level encrytion library
- *
- * Seperated from Encryptor enables us to change low-level library easier.
- * If there is a modification associated with encryption/decryption, it's
- * this class that needs changes instead of messing up lots of classes.
- *
- * Copyright (C) 2014-2017 Symeon Huang <hzwhuang@gmail.com>
- *
- * This file is part of the libQtShadowsocks.
- *
- * libQtShadowsocks is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * libQtShadowsocks is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with libQtShadowsocks; see the file LICENSE. If not, see
- * <http://www.gnu.org/licenses/>.
- */
-
 #ifndef CIPHER_H
 #define CIPHER_H
 
@@ -34,7 +6,6 @@
 #include <QObject>
 #include <botan/pipe.h>
 #include <botan/version.h>
-#include "rc4.h"
 #include "chacha.h"
 #include "export.h"
 
@@ -86,11 +57,9 @@ public:
 
 private:
     Botan::Pipe *pipe;
-    RC4 *rc4;
     ChaCha *chacha;
     QByteArray iv;
 };
 
 }
-
-#endif // CIPHER_H
+#endif

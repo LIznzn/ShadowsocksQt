@@ -1,25 +1,3 @@
-/*
- * udprelay.h - the header file of UdpRelay class
- *
- * Copyright (C) 2014-2016 Symeon Huang <hzwhuang@gmail.com>
- *
- * This file is part of the libQtShadowsocks.
- *
- * libQtShadowsocks is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * libQtShadowsocks is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with libQtShadowsocks; see the file LICENSE. If not, see
- * <http://www.gnu.org/licenses/>.
- */
-
 #ifndef UDPRELAY_H
 #define UDPRELAY_H
 
@@ -32,14 +10,12 @@
 
 namespace QSS {
 
-class QSS_EXPORT UdpRelay : public QObject
-{
+class QSS_EXPORT UdpRelay : public QObject {
     Q_OBJECT
 public:
     explicit UdpRelay(const EncryptorPrivate &ep,
                       const bool &is_local,
                       const bool &auto_ban,
-                      const bool &auth,
                       const Address &serverAddress,
                       QObject *parent = 0);
 
@@ -70,7 +46,6 @@ private:
     const Address &serverAddress;
     const bool &isLocal;
     const bool &autoBan;
-    const bool &auth;
     QUdpSocket listenSocket;
     Encryptor *encryptor;
 
@@ -85,5 +60,4 @@ private slots:
 };
 
 }
-
-#endif // UDPRELAY_H
+#endif

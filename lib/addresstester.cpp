@@ -1,29 +1,3 @@
-/*
- * addresstester.cpp - the source file of AddressTester class
- *
- * Simple way to test the connection's latency.
- * Since it's a just socket connection without any data transfer,
- * the remote doesn't need to be a shadowsocks server.
- *
- * Copyright (C) 2014-2016 Symeon Huang <hzwhuang@gmail.com>
- *
- * This file is part of the libQtShadowsocks.
- *
- * libQtShadowsocks is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * libQtShadowsocks is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with libQtShadowsocks; see the file LICENSE. If not, see
- * <http://www.gnu.org/licenses/>.
- */
-
 #include "addresstester.h"
 #include "encryptorprivate.h"
 #include "encryptor.h"
@@ -69,13 +43,11 @@ void AddressTester::startLagTest(int timeout)
 
 void AddressTester::startConnectivityTest(const QString &method,
                                           const QString &password,
-                                          bool one_time_auth,
                                           int timeout)
 {
     testingConnectivity = true;
     encryptionMethod = method;
     encryptionPassword = password;
-    oneTimeAuth = one_time_auth;
     connectToServer(timeout);
 }
 
@@ -110,16 +82,12 @@ void AddressTester::onConnected()
          * TODO: find a better way to check connectivity
          */
         QByteArray dest =
-                Common::packAddress(Address("www.google.com", 80), oneTimeAuth);
+                Common::packAddress(Address("www.google.com", 80));
         QByteArray payload =
                 QByteArray::fromHex("474554202f20485454502f312e310d0a486f73743a"
                                     "207777772e676f6f676c652e636f6d0d0a55736572"
                                     "2d4167656e743a206375726c2f372e34332e300d0a"
                                     "4163636570743a202a2f2a0d0a0d0a");
-        if (oneTimeAuth) {
-            encryptor.addHeaderAuth(dest);
-            encryptor.addChunkAuth(payload);
-        }
         socket.write(encryptor.encrypt(dest + payload));
     } else {
         socket.abort();

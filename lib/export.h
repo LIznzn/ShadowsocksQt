@@ -9,4 +9,4 @@
 #  define QSS_EXPORT Q_DECL_IMPORT
 #endif
 
-#endif // EXPORT_H
+#endif

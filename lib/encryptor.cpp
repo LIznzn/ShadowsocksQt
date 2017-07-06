@@ -1,25 +1,3 @@
-/*
- * encryptor.cpp - the source file of Encryptor class
- *
- * Copyright (C) 2014-2015 Symeon Huang <hzwhuang@gmail.com>
- *
- * This file is part of the libQtShadowsocks.
- *
- * libQtShadowsocks is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * libQtShadowsocks is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with libQtShadowsocks; see the file LICENSE. If not, see
- * <http://www.gnu.org/licenses/>.
- */
-
 #include "encryptor.h"
 #include <QtEndian>
 
@@ -30,13 +8,11 @@ Encryptor::Encryptor(const EncryptorPrivate &ep, QObject *parent) :
     ep(ep),
     chunkId(0),
     enCipher(nullptr),
-    deCipher(nullptr)
-{
+    deCipher(nullptr) {
     enCipherIV = Cipher::randomIv(ep.ivLen);
 }
 
-void Encryptor::reset()
-{
+void Encryptor::reset() {
     if (enCipher) {
         enCipher->deleteLater();
         enCipher = nullptr;
@@ -49,8 +25,7 @@ void Encryptor::reset()
     chunkId = 0;
 }
 
-QByteArray Encryptor::encrypt(const QByteArray &in)
-{
+QByteArray Encryptor::encrypt(const QByteArray &in) {
     Q_ASSERT(ep.isValid());
 
     QByteArray out;
@@ -63,10 +38,8 @@ QByteArray Encryptor::encrypt(const QByteArray &in)
     return out;
 }
 
-QByteArray Encryptor::decrypt(const QByteArray &in)
-{
+QByteArray Encryptor::decrypt(const QByteArray &in) {
     Q_ASSERT(ep.isValid());
-
     QByteArray out;
     if (!deCipher) {
         QByteArray iv = in.mid(0, ep.ivLen);
@@ -85,10 +58,8 @@ QByteArray Encryptor::decrypt(const QByteArray &in)
     return out;
 }
 
-QByteArray Encryptor::encryptAll(const QByteArray &in)
-{
+QByteArray Encryptor::encryptAll(const QByteArray &in) {
     Q_ASSERT(ep.isValid());
-
     if (enCipher) {
         enCipher->deleteLater();
     }
@@ -98,10 +69,8 @@ QByteArray Encryptor::encryptAll(const QByteArray &in)
     return iv + enCipher->update(in);
 }
 
-QByteArray Encryptor::decryptAll(const QByteArray &in)
-{
+QByteArray Encryptor::decryptAll(const QByteArray &in) {
     Q_ASSERT(ep.isValid());
-
     if (deCipher) {
         deCipher->deleteLater();
     }
@@ -113,8 +82,7 @@ QByteArray Encryptor::decryptAll(const QByteArray &in)
     return deCipher->update(in.mid(ep.ivLen));
 }
 
-QByteArray Encryptor::deCipherIV() const
-{
+QByteArray Encryptor::deCipherIV() const {
     if (deCipher) {
         return deCipher->getIV();
     } else {
@@ -122,22 +90,19 @@ QByteArray Encryptor::deCipherIV() const
     }
 }
 
-void Encryptor::addHeaderAuth(QByteArray &headerData) const
-{
+void Encryptor::addHeaderAuth(QByteArray &headerData) const {
     QByteArray key = enCipherIV + ep.key;
     QByteArray authCode = Cipher::hmacSha1(key, headerData);
     headerData.append(authCode);
 }
 
-void Encryptor::addHeaderAuth(QByteArray &data, const int &headerLen) const
-{
+void Encryptor::addHeaderAuth(QByteArray &data, const int &headerLen) const {
     QByteArray key = enCipherIV + ep.key;
     QByteArray authCode = Cipher::hmacSha1(key, data.left(headerLen));
     data.insert(headerLen, authCode);
 }
 
-void Encryptor::addChunkAuth(QByteArray &data)
-{
+void Encryptor::addChunkAuth(QByteArray &data) {
     QByteArray counter(4, 0);
     qToBigEndian(chunkId, reinterpret_cast<uchar*>(counter.data()));
     chunkId++;
@@ -149,15 +114,13 @@ void Encryptor::addChunkAuth(QByteArray &data)
     data.prepend(len_c + authCode);
 }
 
-bool Encryptor::verifyHeaderAuth(const QByteArray &data, const int &headerLen) const
-{
+bool Encryptor::verifyHeaderAuth(const QByteArray &data, const int &headerLen) const {
     QByteArray key = deCipherIV() + ep.key;
     return Cipher::hmacSha1(key, data.left(headerLen))
             == data.mid(headerLen, Cipher::AUTH_LEN);
 }
 
-bool Encryptor::verifyExtractChunkAuth(QByteArray &data)
-{
+bool Encryptor::verifyExtractChunkAuth(QByteArray &data) {
     QByteArray result;
     bool verified = true;
     data.prepend(incompleteChunk);

@@ -1,25 +1,3 @@
-/*
- * cipher.cpp - the source file of Cipher class
- *
- * Copyright (C) 2014-2017 Symeon Huang <hzwhuang@gmail.com>
- *
- * This file is part of the libQtShadowsocks.
- *
- * libQtShadowsocks is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * libQtShadowsocks is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with libQtShadowsocks; see the file LICENSE. If not, see
- * <http://www.gnu.org/licenses/>.
- */
-
 #include "cipher.h"
 #include <botan/auto_rng.h>
 #include <botan/key_filt.h>
@@ -37,17 +15,13 @@ Cipher::Cipher(const QByteArray &method,
                QObject *parent) :
     QObject(parent),
     pipe(nullptr),
-    rc4(nullptr),
     chacha(nullptr),
-    iv(iv)
-{
-    if (method.contains("RC4")) {
-        rc4 = new RC4(key, iv, this);
-    } else {
+    iv(iv) {
+
 #if BOTAN_VERSION_CODE < BOTAN_VERSION_CODE_FOR(2,0,0)
-        if (method.contains("ChaCha")) {
-            chacha = new ChaCha(key, iv, this);
-        } else {
+    if (method.contains("ChaCha")) {
+        chacha = new ChaCha(key, iv, this);
+    } else {
 #endif
         try {
             std::string str(method.constData(), method.length());
@@ -68,12 +42,12 @@ Cipher::Cipher(const QByteArray &method,
 #if BOTAN_VERSION_CODE < BOTAN_VERSION_CODE_FOR(2,0,0)
         }
 #endif
-    }
 }
 
-Cipher::~Cipher()
-{
-    if (pipe)   delete pipe;
+Cipher::~Cipher() {
+    if (pipe){
+        delete pipe;
+    }
 }
 
 const std::map<QByteArray, Cipher::CipherKeyIVLength> Cipher::keyIvMap = {
@@ -93,7 +67,6 @@ const std::map<QByteArray, Cipher::CipherKeyIVLength> Cipher::keyIvMap = {
     {"des-cfb", {8, 8}},
     {"idea-cfb", {16, 8}},
     {"rc2-cfb", {16, 8}},
-    {"rc4-md5", {16, 16}},
     {"salsa20", {32, 8}},
     {"seed-cfb", {16, 16}},
     {"serpent-256-cfb", {32, 16}}
@@ -115,7 +88,6 @@ const std::map<QByteArray, QByteArray> Cipher::cipherNameMap= {
     {"des-cfb", "DES/CFB"},
     {"idea-cfb", "IDEA/CFB"},
     {"rc2-cfb", "RC2/CFB"},
-    {"rc4-md5", "RC4-MD5"},
     {"salsa20", "Salsa20"},
     {"seed-cfb", "SEED/CFB"},
     {"serpent-256-cfb", "Serpent/CFB"}
@@ -126,8 +98,6 @@ QByteArray Cipher::update(const QByteArray &data)
 {
     if (chacha) {
         return chacha->update(data);
-    } else if (rc4) {
-        return rc4->update(data);
     } else if (pipe) {
         pipe->process_msg(reinterpret_cast<const Botan::byte *>
                           (data.constData()), data.size());
@@ -177,21 +147,17 @@ bool Cipher::isSupported(const QByteArray &method)
     if (method.contains("ChaCha"))  return true;
 #endif
 
-    if (method.contains("RC4")) {
-        return true;
-    } else {
-        std::string str(method.constData(), method.length());
-        Botan::Keyed_Filter *filter;
-        try {
-            filter = Botan::get_cipher(str, Botan::ENCRYPTION);
-        } catch (Botan::Exception &e) {
-            qWarning("%s\n", e.what());
-            return false;
-        }
-        delete filter;
-        return true;
+    std::string str(method.constData(), method.length());
+    Botan::Keyed_Filter *filter;
+    try {
+        filter = Botan::get_cipher(str, Botan::ENCRYPTION);
+    } catch (Botan::Exception &e) {
+        qWarning("%s\n", e.what());
+        return false;
     }
-}
+    delete filter;
+    return true;
+    }
 
 QList<QByteArray> Cipher::getSupportedMethodList()
 {

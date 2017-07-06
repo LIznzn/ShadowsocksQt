@@ -1,25 +1,3 @@
-/*
- * udprelay.cpp - the source file of UdpRelay class
- *
- * Copyright (C) 2014-2015 Symeon Huang <hzwhuang@gmail.com>
- *
- * This file is part of the libQtShadowsocks.
- *
- * libQtShadowsocks is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * libQtShadowsocks is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with libQtShadowsocks; see the file LICENSE. If not, see
- * <http://www.gnu.org/licenses/>.
- */
-
 #include "udprelay.h"
 #include "common.h"
 #include <QDebug>
@@ -29,24 +7,18 @@ using namespace QSS;
 UdpRelay::UdpRelay(const EncryptorPrivate &ep,
                    const bool &is_local,
                    const bool &auto_ban,
-                   const bool &auth,
                    const Address &serverAddress,
                    QObject *parent) :
     QObject(parent),
     serverAddress(serverAddress),
     isLocal(is_local),
-    autoBan(auto_ban),
-    auth(auth)
-{
+    autoBan(auto_ban) {
     encryptor = new Encryptor(ep, this);
 
     // To make sure datagram doesn't exceed remote server's maximum, we can
     // limit how many bytes we take from local socket at a time. This is due
     // the overhead introduced by OTA.
     quint64 localRecvSize = RemoteRecvSize;
-    if (auth && isLocal) {
-        localRecvSize -= (Cipher::AUTH_LEN + 2);
-    }
     listenSocket.setReadBufferSize(localRecvSize);
     listenSocket.setSocketOption(QAbstractSocket::LowDelayOption, 1);
 
@@ -63,13 +35,11 @@ UdpRelay::UdpRelay(const EncryptorPrivate &ep,
             this, &UdpRelay::bytesSend);
 }
 
-bool UdpRelay::isListening() const
-{
+bool UdpRelay::isListening() const {
     return listenSocket.isOpen();
 }
 
-bool UdpRelay::listen(const QHostAddress& addr, quint16 port)
-{
+bool UdpRelay::listen(const QHostAddress& addr, quint16 port) {
     return listenSocket.bind(
               addr,
               port,
@@ -77,8 +47,7 @@ bool UdpRelay::listen(const QHostAddress& addr, quint16 port)
               );
 }
 
-void UdpRelay::close()
-{
+void UdpRelay::close() {
     listenSocket.close();
     encryptor->reset();
     QList<QUdpSocket*> cachedSockets = cache.values();
@@ -88,8 +57,7 @@ void UdpRelay::close()
     cache.clear();
 }
 
-void UdpRelay::onSocketError()
-{
+void UdpRelay::onSocketError() {
     QUdpSocket *sock = qobject_cast<QUdpSocket *>(sender());
     if (!sock) {
         emit info("Fatal. A false object calling onSocketError.");
@@ -102,15 +70,13 @@ void UdpRelay::onSocketError()
     }
 }
 
-void UdpRelay::onListenStateChanged(QAbstractSocket::SocketState s)
-{
+void UdpRelay::onListenStateChanged(QAbstractSocket::SocketState s) {
     QString stateChanged("Listen UDP socket state changed to ");
     QDebug(&stateChanged) << s;
     emit debug(stateChanged);
 }
 
-void UdpRelay::onServerUdpSocketReadyRead()
-{
+void UdpRelay::onServerUdpSocketReadyRead() {
     if (listenSocket.pendingDatagramSize() > RemoteRecvSize) {
         emit info("[UDP] Datagram is too large. discarded.");
         return;
@@ -144,8 +110,7 @@ void UdpRelay::onServerUdpSocketReadyRead()
 
     Address destAddr, remoteAddr(r_addr, r_port);//remote == client
     int header_length = 0;
-    bool at_auth = false;
-    Common::parseHeader(data, destAddr, header_length, at_auth);
+    Common::parseHeader(data, destAddr, header_length);
     if (header_length == 0) {
         emit info("[UDP] Can't parse header. "
                   "Wrong encryption method or password?");
@@ -173,32 +138,9 @@ void UdpRelay::onServerUdpSocketReadyRead()
     emit debug(dbg);
 
     if (isLocal) {
-        if (auth || at_auth) {
-            /*
-             * shadowsocks UDP Request (OTA-enabled, unencrypted)
-             * +------+----------+----------+----------+-------------+
-             * | ATYP | DST.ADDR | DST.PORT |   DATA   |  HMAC-SHA1  |
-             * +------+----------+----------+----------+-------------+
-             * |  1   | Variable |    2     | Variable |     10      |
-             * +------+----------+----------+----------+-------------+
-             */
-            encryptor->addHeaderAuth(data);
-        }
         data = encryptor->encryptAll(data);
         destAddr = serverAddress;
     } else {
-        if (auth || at_auth) {
-            if (!encryptor->verifyHeaderAuth(data,
-                                             data.length() - Cipher::AUTH_LEN))
-            {
-                emit info("[UDP] One-time message authentication "
-                          "for header failed.");
-                if (autoBan) {
-                    Common::banAddress(r_addr);
-                }
-                return;
-            }
-        }
         data = data.mid(header_length,
                         data.length() - header_length - Cipher::AUTH_LEN);
     }
@@ -209,8 +151,7 @@ void UdpRelay::onServerUdpSocketReadyRead()
     client->writeDatagram(data, destAddr.getFirstIP(), destAddr.getPort());
 }
 
-void UdpRelay::onClientUdpSocketReadyRead()
-{
+void UdpRelay::onClientUdpSocketReadyRead() {
     QUdpSocket *sock = qobject_cast<QUdpSocket *>(sender());
     if (!sock) {
         emit info("Fatal. A false object calling onClientUdpSocketReadyRead.");
@@ -233,9 +174,8 @@ void UdpRelay::onClientUdpSocketReadyRead()
         data = encryptor->decryptAll(data);
         Address destAddr;
         int header_length = 0;
-        bool _auth;
 
-        Common::parseHeader(data, destAddr, header_length, _auth);
+        Common::parseHeader(data, destAddr, header_length);
         if (header_length == 0) {
             emit info("[UDP] Can't parse header. "
                       "Wrong encryption method or password?");
@@ -257,8 +197,7 @@ void UdpRelay::onClientUdpSocketReadyRead()
     }
 }
 
-void UdpRelay::onClientDisconnected()
-{
+void UdpRelay::onClientDisconnected() {
     QUdpSocket *client = qobject_cast<QUdpSocket *>(sender());
     if (!client) {
         emit info("Fatal. A false object calling onClientDisconnected.");
