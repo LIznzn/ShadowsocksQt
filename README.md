@@ -1,5 +1,5 @@
-libQtShadowsocks
-================
+ShadowsocksQt
+=============
 
 Introduction
 ------------
