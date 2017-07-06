@@ -13,6 +13,16 @@ This is a standalone program in both local-side and server-side.
 [ss]: http://shadowsocks.org
 
 
+Compile
+-------
+
+MacOS:
+
+    brew install qt5
+
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/9289b652846abb0d889ab9545ce2e0e74a658e11/Formula/botan.rb
+
+
 Feature
 -------
 
