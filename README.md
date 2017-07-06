@@ -1,20 +1,26 @@
 libQtShadowsocks
 ================
 
-[![Build Status](https://travis-ci.org/shadowsocks/libQtShadowsocks.svg?branch=master)](https://travis-ci.org/shadowsocks/libQtShadowsocks)
-
 Introduction
 ------------
 
-`libQtShadowsocks` is a lightweight [shadowsocks][ss] library.
+`ShadowsocksQt` is a lightweight [shadowsocks][ss] Client.
 
-Written in C++ using Qt 5 framework and Botan library, it aims to provide a developer-friendly [shadowsocks][ss] library for Qt applications such as [shadowsocks-qt5] (https://github.com/shadowsocks/shadowsocks-qt5/).
+Written in C++ using Qt 5 framework and Botan library.
 
-The sub-project `shadowsocks-libqss` utilises this library. You may wish to check the code to see how to integrate `libQtShadowsocks` into your project. `shadowsocks-libqss` can also be used as a standalone program in both local-side and server-side.
-
-Check [installation wiki page](https://github.com/shadowsocks/libQtShadowsocks/wiki/Installation) to see how to install this library and/or `shadowsocks-libqss`.
+This is a standalone program in both local-side and server-side.
 
 [ss]: http://shadowsocks.org
+
+Feature
+-------
+
+Based on `libQtShadowsocks` 1.10.0.
+
+1.Remove OTA
+2.Remove RC4-MD5 & RC4
+3.Remove encryption speedtest
+4.Update command options
 
 License
 -------
@@ -22,6 +28,7 @@ License
 ![](http://www.gnu.org/graphics/lgplv3-147x51.png)
 
 Copyright (C) 2014-2016 Symeon Huang
+Copyright (C) 2017 Kevin Li
 
 This library is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as
