@@ -13,8 +13,8 @@ This is a standalone program in both local-side and server-side.
 [ss]: http://shadowsocks.org
 
 
-Compile
--------
+Compiling
+---------
 
 MacOS:
 
