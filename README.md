@@ -33,6 +33,7 @@ License
 ![](http://www.gnu.org/graphics/lgplv3-147x51.png)
 
 Copyright (C) 2014-2016 Symeon Huang
+
 Copyright (C) 2017 Kevin Li
 
 This library is free software: you can redistribute it and/or modify
